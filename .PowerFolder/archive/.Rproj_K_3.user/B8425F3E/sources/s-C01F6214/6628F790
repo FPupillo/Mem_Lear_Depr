@@ -1,0 +1,26 @@
+{
+    "id": "6628F790",
+    "path": "~/PowerFolders/Mem_Lear_Depr/helper_functions/getCons.R",
+    "project_path": "helper_functions/getCons.R",
+    "type": "r_source",
+    "hash": "2435723863",
+    "contents": "",
+    "dirty": false,
+    "created": 1646401564314.0,
+    "source_on_save": false,
+    "relative_order": 14,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "23,2",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1646401768,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1646401768289,
+    "read_only": false,
+    "read_only_alternatives": []
+}

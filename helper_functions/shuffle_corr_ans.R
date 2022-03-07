@@ -1,0 +1,305 @@
+
+shuffle_corr_ans<-function(corr_ans, num, probab,  Pcong=NULL, Pincong=NULL,
+                           leaveout){
+  #----------------------------------------------------------------------------#
+  # function that loops through the correct answers to find a balanced 
+  # assignment that meets the contingencies
+  # INPUT:
+  #  corr_ans: a vector with the correct answers
+  #  num: an integer indicating the length of the file
+  #  probab: contingencies
+  #  Pcong: probability for the preferred flower
+  #  Pincong: probability for the non-preferred
+  #  leaveout: number of category o leave out for the count of the incongruent 
+  #             contingencies this category will be underrepresented
+  # OUTPUT:
+  #  A vector with the categories that correspond with the correct responses
+  #----------------------------------------------------------------------------#
+  
+# calculate the contingencies  
+probs<-vector()
+for (f in 1:length(categ)){
+  probs[f]<-(length(corr_ans[corr_ans==categ[f]]) / length(corr_ans))
+}
+
+# print them
+print(probs)
+
+# which is the most frequent contingency
+match<-which(probab==max(probab))
+mismatch<-which(probab!=max(probab))
+
+# cut the "leaveout" category
+mismatch<-mismatch[mismatch!=leaveout]
+
+
+# loop until the desired contingencies are met
+while((probs[match]>Pcong | probs[match]<Pcong |
+       any(probs[mismatch]!=Pincong  ))
+      ){
+  corr_ans<-sample(categ,num, prob = probab, replace = T)
+  probs<-vector()
+  for (f in 1:length(categ)){
+    probs[f]<-(length(corr_ans[corr_ans==categ[f]]) / length(corr_ans))
+  }
+  
+  print(probs)
+  
+}
+
+return(corr_ans)
+
+}
+
+#now the same but for dataframes
+shuffle_corr_ans_dataframe<-function(dataframe,
+                                     probab, Pcong = NULL, Pincong = NULL,
+                                     leaveout){
+  #----------------------------------------------------------------------------#
+  # function that shuffle the trials of a dataframe according to certain 
+  # criteria
+  # 
+  # INPUT:
+  #  dataframe: a dataframe containing info about the list of the trials
+  #  probab: contingencies
+  #  Pcong: probability for the preferred flower
+  #  Pincong: probability for the non-preferred
+  #  leaveout: name of the category to leave out
+  # OUTPUT:
+  #  the dataframe where rows were reordered according to criteria
+  #----------------------------------------------------------------------------#
+  
+  # we need a function with the entire process that we can loop later on
+  process<-function(){
+  list<-dataframe
+  list$corrans<-as.vector(NA)
+  
+  for (i in 1 : nrow(list)){
+    list$corrans[i]<-as.character(list[i,(list$corr_resp[i])])
+  }
+  
+  corrAns<-list$corrans
+
+  tablew1<-data.frame(corrAns)
+  
+ a<- (tablew1  %>%
+          count ( corrAns) %>%
+          mutate(prop = prop.table(n)))
+  
+  
+  # proportions
+  num<-c(a$n)
+
+  table<-a
+  
+  return(list(list, num, table))
+  
+  }
+  
+  # execute the process
+  procExe<-process()
+  dataframe<-procExe[[1]]
+  tab<-procExe[[3]]
+
+  # numbers of the categories we are interested in 
+  num<-tab$n[tab$corrAns!=leaveout]
+  
+  maxTolCong<-nrow(dataframe)*Pcong # threshold for keep looping: cong trials
+  maxTolInc<-nrow(dataframe)*Pincong # threshold for keep looping: incong trials
+
+  # get the sum of consecutive trials
+  cons<-getCons(dataframe)
+  
+  while (max(num)!=maxTolCong | min(num)!=maxTolInc |
+         any(cons[2:5]!=2)) { # the first 5 trials should not be incongruent
+  
+  dataframe<-shuffle(dataframe)
+    
+  procExe<-process()
+  
+  dataframe<-procExe[[1]]
+  tab<-procExe[[3]]
+  num<-tab$n[tab$corrAns!=leaveout]
+  cons<-getCons(dataframe)
+  
+  }
+
+  # print list and corr ans
+  print(tab)
+  
+  print(paste("consecutive =", cons[2:5]))
+  
+  return(dataframe)
+}
+
+#now the same but for dataframes
+shuffle_corr_ans_dataframe_pract<-function(dataframe,  Pcong=NULL, Pincong=NULL){
+  # 
+  # INPUT:
+  #  dataframe: a dataframe with the correct answers, butterflies, and flowers
+  #  Pcong: probability for the preferred flower
+  # Pincong: probability for the non-preferred
+  
+  ##############
+  # count the cases
+  #############
+  
+  # we need a function with the entire process that we can loop later on
+  process<-function(){
+    # subset first butterfly
+    # red butterfly
+    redch<-dataframe[(dataframe$first_character=="red_character" & dataframe$Cue==1 )  | (dataframe$second_character=="red_character" & dataframe$Cue==2 ), ]
+    yellch<-dataframe[(dataframe$first_character=="yellow_character" & dataframe$Cue==1 )  | (dataframe$second_character=="yellow_character" & dataframe$Cue==2 ), ]
+    
+    # first white butterfly
+    redch$corrans<-NA
+    yellch$corrans<-NA
+    
+    for (i in 1 : nrow(redch)){
+      redch$corrans[i]<-as.character(redch[i,(redch$corr_ans[i]+3)])
+    }
+    
+    corrAns<-NA
+    character<-NA
+    for (j in 1:(nrow(redch))){
+      corrAns[j]<- as.character(redch[j, (redch$corr_ans[j]+3)])
+      character[j]<-as.character(redch[j, (redch$Cue[j])])
+    }
+    
+    tablew1<-data.frame(cbind(character, corrAns))
+    
+    a<- print(tablew1  %>%
+                count (character, corrAns) %>%
+                mutate(prop = prop.table(n)))
+    
+    # now yellow
+    
+    for (i in 1 : nrow(yellch)){
+      yellch$corrans[i]<-as.character(yellch[i,(yellch$corr_ans[i]+3)])
+    }
+    
+    corrAns<-NA
+    character<-NA
+    for (j in 1:(nrow(yellch))){
+      corrAns[j]<- as.character(yellch[j, (yellch$corr_ans[j]+3)])
+      character[j]<-as.character(yellch[j, (yellch$Cue[j])])
+    }
+    
+    tablew2<-data.frame(cbind(character, corrAns))
+    
+    b<-print(tablew2  %>%
+               count (character, corrAns) %>%
+               mutate(prop = prop.table(n)))
+    
+    # proportions
+    num<-c(a$n, b$n)
+    
+    
+    return(list(dataframe, num))
+    
+  }
+  # execute the process
+  procExe<-process()
+  dataframe<-procExe[[1]]
+  num<-procExe[[2]]
+  
+  maxTolCong<-nrow(dataframe)/2*Pcong # threshold for keep looping: cong trials
+  maxTolInc<-nrow(dataframe)/2*Pincong # threshold for keep looping: incong trials
+  
+  while(any(num>(maxTolCong+0.5)) | any(num<(maxTolCong+0.5) & num>(maxTolInc+0.5)) | any(num<maxTolInc-0.5)  ){ #|  probs[mismatch]<0.04)
+    
+    dataframe<-shuffle(rbind(shuffle(Listnew[1:48,])[1:(trialPerBlock/2),], shuffle(Listnew[49:96,])[1:(trialPerBlock/2),]))
+    
+    
+    procExe<-process()
+    dataframe<-procExe[[1]]
+    num<-procExe[[2]]
+  }
+  
+  return(dataframe)
+}
+
+#now the same but for dataframes
+shuffle_corr_ans_dataframe_warmup<-function(dataframe,  probab){
+  # 
+  # INPUT:
+  #  dataframe: a dataframe with the correct answers, butterflies, and flowers
+  #  prob: probability for each flower. Usually, a vector with four numbers
+  
+  ##############
+  # count the cases
+  #############
+  
+  # we need a function with the entire process that we can loop later on
+  process<-function(){
+    # subset first butterfly
+    # white butterfly
+    blackch<-dataframe[(dataframe$first_character=="stimuli/black_character.jpg" & dataframe$Cue==1 )  | (dataframe$second_character=="stimuli/black_character.jpg" & dataframe$Cue==2 ), ]
+    whitech<-dataframe[(dataframe$first_character=="stimuli/white_character.jpg" & dataframe$Cue==1 )  | (dataframe$second_character=="stimuli/white_character.jpg" & dataframe$Cue==2 ), ]
+    
+    # first white butterfly
+    blackch$corrans<-NA
+    whitech$corrans<-NA
+    
+    for (i in 1 : nrow(blackch)){
+      blackch$corrans[i]<-as.character(blackch[i,(blackch$corr_ans[i]+3)])
+    }
+    
+    corrAns<-NA
+    character<-NA
+    for (j in 1:(nrow(blackch))){
+      corrAns[j]<- as.character(blackch[j, (blackch$corr_ans[j]+3)])
+      character[j]<-as.character(blackch[j, (blackch$Cue[j])])
+    }
+    
+    tablew1<-data.frame(cbind(character, corrAns))
+    
+    a<- print(tablew1  %>%
+                count (character, corrAns) %>%
+                mutate(prop = prop.table(n)))
+    
+    
+    # now white
+    
+    for (i in 1 : nrow(whitech)){
+      whitech$corrans[i]<-as.character(whitech[i,(whitech$corr_ans[i]+3)])
+    }
+    
+    corrAns<-NA
+    character<-NA
+    for (j in 1:(nrow(whitech))){
+      corrAns[j]<- as.character(whitech[j, (whitech$corr_ans[j]+3)])
+      character[j]<-as.character(whitech[j, (whitech$Cue[j])])
+    }
+    
+    tablew2<-data.frame(cbind(character, corrAns))
+    
+    b<-print(tablew2  %>%
+               count (character, corrAns) %>%
+               mutate(prop = prop.table(n)))
+    
+    # proportions
+    num<-c(a$n, b$n)
+    
+    
+    return(list(dataframe, num))
+    
+  }
+  # execute the process
+  procExe<-process()
+  dataframe<-procExe[[1]]
+  num<-procExe[[2]]
+  
+  
+  while(any(num>7) | any(num<7 & num>2)){ #|  probs[mismatch]<0.04)
+    
+    dataframe<-currlist[sample(nrow(currlist), 19),]
+    
+    
+    procExe<-process()
+    dataframe<-procExe[[1]]
+    num<-procExe[[2]]
+  }
+  
+  return(dataframe)
+}

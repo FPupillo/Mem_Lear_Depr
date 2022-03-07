@@ -1,0 +1,28 @@
+{
+    "id": "AC78BDFB",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1646401460462.0,
+    "source_on_save": false,
+    "relative_order": 12,
+    "properties": {
+        "id": "75e86025859c4b39ad1899cfc2a45b6f",
+        "name": "procExe",
+        "title": "procExe",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 46,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1646401460462,
+    "read_only": false,
+    "read_only_alternatives": []
+}

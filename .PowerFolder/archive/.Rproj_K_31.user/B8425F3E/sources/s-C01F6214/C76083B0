@@ -1,0 +1,26 @@
+{
+    "id": "C76083B0",
+    "path": "~/PowerFolders/Mem_Lear_Depr/helper_functions/shuffle_corr_ans.R",
+    "project_path": "helper_functions/shuffle_corr_ans.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": true,
+    "created": 1646394554673.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "88,2",
+        "scrollLine": "88"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1646400630,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1646400902958,
+    "read_only": false,
+    "read_only_alternatives": []
+}

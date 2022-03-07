@@ -1,0 +1,114 @@
+#------------------------------------------------------------------------------#
+# Script that creates the list of the objects 
+# created By Francesco Pupillo
+# date = "Tue Mar  1 19:36:54 2022"
+#------------------------------------------------------------------------------#
+
+rm(list=ls())
+
+# load packages
+library("readxl")
+library(gtools)
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(car)
+library(abind)
+
+# source functions
+source("helper_functions/shuffle_corr_ans.R")
+
+# retrieve the file with info of the categories
+category<-read_excel("SI1.xlsx", sheet = "Sheet2")
+
+# change fourth and fifth names to get the hyphen
+names(category)[4:5]<-c("modal_categ", "cat_agreement")
+
+# select the categories
+selCat<-c( "Outdoor activity & sport item", "Kitchen & utensil",
+           "Electronic device & accessory", "Hand labour tool & accessory")
+
+# set the reward probabilities for the contingencies
+highC<-0.75    # 75 for high feedback
+lowC<-(1-highC)/3
+
+categ<-selCat
+
+# Since the categories needs to appear randomly on the sceen,
+# we can consider all the possible permutations of category and position
+# We  then need 4 factorial (4*3*2*1) =24
+categPermut<-permutations(n=4,r=4,v=categ,repeats.allowed=F)
+
+# we have 60 trials per block, so we can repeat the permutations three times 
+# and then randomly sample them 
+allList<-rbind(categPermut,categPermut,categPermut)
+
+# convert to dataset
+allList<-data.frame(allList)
+
+# reduce to 60 by randomly sample them (without replacement)
+set.seed(5845698)
+
+allList<-dplyr::sample_n(allList, 60, replace = F)
+
+names(allList)<-c("left_categ", "centleft_categ", "centright_categ", "right_categ")
+
+# we need 3 lists with different character-cateogry contingencies
+# create an array
+contingencies<-array(numeric(), c(1, 4, 0)) # creating an empty arrray of 2 columns, 3 rows, and nothing on it
+
+# create the first list
+# creating the contingencies for first list, by appending this matrix
+
+contingencies<-abind(contingencies, matrix(c(highC, lowC, lowC, lowC),
+  # this means that the first category (outdoor activity) is the one with the high feedback
+                                           nrow =1, ncol=4, byrow=T), along =3)
+
+# append now the contingencies after the first change point
+contingencies<-abind(contingencies, matrix(c(lowC, highC, lowC, lowC),
+                                           nrow =1, ncol=4, byrow=T), along =3)
+
+# append now the contingencies after the second change point
+contingencies<-abind(contingencies, matrix(c(lowC, lowC, lowC, highC),
+                                           nrow =1, ncol=4, byrow=T), along =3)
+                                           
+set.seed(5845698)
+
+# create a loop for creating the lists
+# counter for list count, for selecting the name
+listcount<-1
+
+for (h in 1:dim(contingencies)[3]){ # loop through the third dimension of the 
+  # matrix (list number)
+
+  # sample correct answer
+  corr_ans<-sample(selCat,nrow(allList), prob = contingencies[1,,h],
+                    replace = T)
+  
+  # make sure that the contingencies are balanced
+  corr_ans<-shuffle_corr_ans(corr_ans1, num = length(corr_ans1),
+                              probab = contingencies[1,,h], 
+                              Pcong = highC, Pincong = lowC )
+  
+  # we need a variable indicating the trial condition (high vs low reward or 
+  # punishment)
+  # get the flower that represents the highest contingency
+  highcont<-which(contingencies[1,,h]==highC)
+  
+  # 1 is high and 0 is low
+  type<-as.numeric(corr_ans==selCat[highcont])
+  
+  # now we have to indicate the key participants need to press in order to get the right response
+  # corr_ans variable that will be used in the list file
+  corr_resp<-vector()
+  for (j in 1: length(corr_ans)){
+    corr_resp[j]<- which(allList[j,]==corr_ans[j])
+  }
+
+  # add it to the dataframe
+  allList$corr_resp<- corr_resp
+  allList$type<-type  
+
+  # shuffle the trials
+  assign(paste0("tasklist", listcount), shuffle(allList))
+  

@@ -1,0 +1,596 @@
+# select images for task
+
+rm(list=ls())
+library("readxl")
+library(gtools)
+library(dplyr)
+library(lme4)
+library(lmerTest)
+library(car)
+library(abind)
+
+# retrieve the helper functions
+cd<-getwd()
+setwd("helper_functions")
+for (f in 1:length(list.files())){
+  source(list.files()[f])
+}
+setwd(cd)
+
+# retrieve the file with info of the categories
+category<-read_excel("SI1.xlsx", sheet = "Sheet2")
+
+# chack how many categories
+# change fourth and fifth names to get the hyphen
+names(category)[4:5]<-c("modal_categ", "cat_agreement")
+
+# get the number of objects per category
+table<-category %>% 
+  group_by(modal_categ) %>% 
+  tally()
+
+# order by modal categ and name agreement
+table<-table[order(table$n, decreasing=T),]
+
+head(table, n=11)
+
+# select the categories
+selCat<-c( "Outdoor activity & sport item", "Kitchen & utensil","Electronic device & accessory", "Hand labour tool & accessory")
+
+# set the reward probabilities for the contingencies
+Pcong<-0.75    # 75 for the conguent ones, the preferred category
+Pincong<-(1-Pcong)/3
+
+################## first list with the characters
+# create a list of characters 
+characters<-c("black_character", "white_character")
+categ<-selCat
+cue<-c(1,2)
+
+# for the categories, to have alle the possible permutations of category and position we need 4 factorial (4*3*2*1) =24
+# this is only for one caracter
+categPermut<-permutations(n=4,r=4,v=categ,repeats.allowed=F)
+
+# then repeat the combinations two times (character) by two times (cue). In total, 96 trials
+allcombin<-cbind(first_character=rep(characters, each=nrow(categPermut)*2), 
+                 second_character=rep(rev(characters), each=nrow(categPermut)*2),
+                 Cue=rep(cue,  each=nrow(categPermut), times=2))
+
+allList<-data.frame(cbind(allcombin, do.call(rbind, replicate(4, categPermut, simplify=FALSE))))
+
+# names of the categories
+names(allList)[4:7]<-c("left_categ", "centleft_categ", "centright_categ", "right_categ")
+
+# we need 4 lists with different character-cateogry contingencies
+# create an array
+contingencies<-array(numeric(), c(2, 4, 0)) # creating an empty arrray of 2 columns, 4 rows, and nothing on it
+
+# create the first list
+# creating the contingencies for first list, white and grey butterfly respectively, by appending this matrix
+contingencies<-abind(contingencies, matrix(c(Pcong, Pincong, Pincong, Pincong, Pincong, Pincong, Pincong, Pcong), nrow =2, ncol=4, byrow=T), along =3)
+
+# repeat it for the list Aplus
+contingencies<-abind(contingencies, matrix(c(Pcong, Pincong, Pincong, Pincong, Pincong, Pincong, Pincong, Pcong), nrow =2, ncol=4, byrow=T), along =3)
+
+# creating the second list
+contingencies<-abind(contingencies, matrix(c(Pincong, Pincong, Pcong, Pincong, Pincong, Pcong, Pincong, Pincong), nrow =2, ncol=4, byrow=T), along =3)
+
+# creating the third list
+contingencies<-abind(contingencies, matrix(c(Pincong, Pcong, Pincong, Pincong, Pincong, Pincong, Pincong, Pcong), nrow =2, ncol=4, byrow=T), along =3)
+
+# creating the fourth list
+contingencies<-abind(contingencies, matrix(c(Pcong, Pincong, Pincong, Pincong, Pincong, Pincong, Pcong, Pincong), nrow =2, ncol=4, byrow=T), along =3)
+
+set.seed(5845698)
+
+# create a loop for creating the lists
+# counter for list count, for selecting the name
+listcount<-1
+for (h in 1:dim(contingencies)[3]){
+  
+  # subset the white_butterfly trials
+  whitecharacter<-allList[(allList$first_character=="white_character" & allList$Cue==1 )  | (allList$second_character=="white_character" & allList$Cue==2 ), ]
+  
+  corr_ans1<-sample(selCat,nrow(whitecharacter), prob = contingencies[1,,h], replace = T)
+  
+  # make sure that the contingencies are balanced
+  corr_ans1<-shuffle_corr_ans(corr_ans1, length(corr_ans1), probab = contingencies[1,,h], Pcong = Pcong, Pincong = Pincong )
+  
+  # get the flower that represents the highest contingency
+  highcont<-which(contingencies[1,,h]>Pcong-0.5)
+  type1<-as.numeric(corr_ans1==selCat[highcont])
+  
+  # now other butterfly grey
+  blackcharacter<-allList[(allList$first_character=="black_character" & allList$Cue==1 )  | (allList$second_character=="black_character" & allList$Cue==2 ), ]
+  corr_ans2<-sample(selCat,nrow(blackcharacter), prob = contingencies[2,,h], replace = T)
+  
+  for (f in 1:length(selCat)){
+    print(length(corr_ans2[corr_ans2==selCat[f]]) / length(corr_ans2))
+  }
+  
+  corr_ans2<-shuffle_corr_ans(corr_ans2, length(corr_ans2),contingencies[2,,h], Pcong = Pcong, Pincong = Pincong )
+  
+  # get the flower that represents the highest contingency
+  highcont<-which(contingencies[2,,h]>Pcong-0.5)
+  type2<-as.numeric(corr_ans2==selCat[highcont])
+  
+  # now we have to indicate the key participants need to press in order to get the right response
+  # temporary corr_ans variable
+  Corr_ans<-c(corr_ans1, corr_ans2)
+  # corr_ans variable that will be used in the list file
+  corr_ans<-vector()
+  for (j in 1: length(Corr_ans)){
+    corr_ans[j]<- which(allList[j,]==Corr_ans[j])-3
+  }
+  
+  Listnew<-data.frame(rbind(whitecharacter, blackcharacter))
+  Listnew$corr_ans<-(corr_ans)
+  #Listnew$obj_file<-"stimuli/objects/"
+  Listnew$trial_cond<-c(type1, type2)
+  Listnew$switch_cond<-h
+  
+  ############# create an object indicating the butterfly is shown under the chosen flower
+  Listnew$cuedCharacter<-NA
+  
+  for (j in 1: nrow(Listnew)){
+    if(Listnew$Cue[j]==1){
+      Listnew$cuedCharacter[j]<-as.character(Listnew$first_character[j])
+    } else{
+      Listnew$cuedCharacter[j]<-as.character(Listnew$second_character[j])
+    }
+  }
+  # number of trials for each list
+  trialPerBlock<-48
+  # create each list as a sample of the whole permutation list
+  
+  # for each list, sample half from the whitebutttr list and half from the greybuttr
+  #set.seed(4533816)
+  # shuffle first and second half of Listnew, respectively, so we have equal amount of white and grey butterfly. Then shuffle all. 
+  if (h==2){
+    listname<-"tasklistAplus"
+    listcount<-2
+  }else{
+    listname<-paste("tasklist", LETTERS[listcount], sep="")
+    listcount<-listcount+1
+  }
+  # shuffle half from half list and half from the second half
+  assign(listname, shuffle(rbind(shuffle(Listnew[1:48,])[1:(trialPerBlock/2),], shuffle(Listnew[49:96,])[1:(trialPerBlock/2),])))
+  
+  # make sure the contingencies are okay
+  assign(listname, shuffle_corr_ans_dataframe(dataframe = as.data.frame(eval(parse(text = listname))), Pcong = Pcong, Pincong = Pincong))
+  
+}
+
+# count the trials
+corr_ans<-vector()
+lists<-c("tasklistA", "tasklistAplus", "tasklistB", "tasklistC", "tasklistD")
+
+currList<-NA
+
+counts(lists)
+
+# check the distribution of trial cond
+for (l in 1:length(lists)){
+  currlist<-as.data.frame(eval(parse(text = lists[l])))
+  print(lists[l])
+  
+  trial_cond<-NA
+  character<-NA
+  for (j in 1:(nrow(currlist))){
+    trial_cond[j]<- currlist$trial_cond[j]
+    character[j]<-as.character(currlist[j, (currlist$Cue[j])])
+  }
+  
+  table<-data.frame(cbind(trial_cond, character))
+  print(table  %>%
+          count (character, trial_cond) %>%
+          mutate(prop = prop.table(n)))
+}
+
+
+####################################################################
+########################### select object according to object categories
+####################################################################
+# create a dataset with only the categories
+#data_task<-dataall$data_task
+
+dataSel<-category[category$modal_categ %in% selCat, ]
+
+# images that were repeated
+imagestodelete<-c("djmixer01","cleaver02","fork07b","jar03","mug05", "pot02a", "strainer02", "muffintray02",
+                  "sandpaper", "paintscraper", "musicalwoodenspoons","icescraper","hosenozzle", "carbattery",
+                  "bagtie", "backfloat" )
+
+dataSel<-dataSel[!dataSel$Filename %in% imagestodelete, ]
+# serving spoon is servingspoon01
+dataSel$Filename[dataSel$Filename=="servingspoon"]<-"servingspoon01"
+# dvdcase is dvdcase01
+dataSel$Filename[dataSel$Filename=="dvdcase"]<-"dvdcase01"
+# bowl 
+dataSel$Filename[dataSel$Filename=="bowl01"]<-"bowl02a"
+
+
+
+# how many objects remaining?
+# get the number of objects per category
+table<-dataSel %>% 
+  group_by(modal_categ) %>% 
+  tally()
+
+# order by modal categ and name agreement
+table<-table[order(table$n, decreasing=T),]
+
+head(table, n=11)
+
+# we need to split among task objects, new objects for recognition, and fillers
+set.seed(5588422)
+process<-function(){
+  for (cat in 1:length(selCat)){
+    # subset the database
+    datatask<- dataSel[dataSel$modal_categ==selCat[cat],]
+    
+    # select object encoding (day2) they are 36 + 12, that ere the incongruent ones
+    datatasksel<-datatask[sample(nrow(datatask), size = 48, replace =F),] 
+      
+    # assign to a dataset
+    assign(paste(selCat[cat],"_day2",sep=""), datatasksel)
+    # delete those objects
+    datatask<-datatask[!datatask$Filename %in% datatasksel$Filename,]
+    
+    # now the recognition (new objects)
+    datarec<-datatask[sample(nrow(datatask), size = 36, replace =F),]
+    # assign to a dataset
+    assign(paste(selCat[cat],"_rec",sep=""), datarec)
+    # delete those objects
+    datatask<-datatask[!datatask$Filename %in% datarec$Filename,]
+    # now the fillers
+    datafill<-datatask[sample(nrow(datatask), size = nrow(datatask), replace =F),]
+    # assign to a dataset
+    assign(paste(selCat[cat],"_fill",sep=""), datafill)
+    
+  }
+  
+  # merget the dataset to create the three task, rec, and fillers
+  
+  data_day2<-rbind(`Hand labour tool & accessory_day2`, `Kitchen & utensil_day2`, `Outdoor activity & sport item_day2`, `Electronic device & accessory_day2`)
+  data_rec<-rbind(`Hand labour tool & accessory_rec`, `Kitchen & utensil_rec`, `Outdoor activity & sport item_rec`, `Electronic device & accessory_rec`)
+  data_day1<-rbind(`Hand labour tool & accessory_fill`, `Kitchen & utensil_fill`, `Outdoor activity & sport item_fill`, `Electronic device & accessory_fill`)
+  return(list("data_day2"=data_day2, "data_rec"=data_rec, "data_day1" = data_day1))#, "data_fill"=data_fill))
+}
+
+# check whether there is any significant difference among the categories in category agreement
+dataall<-process()
+dataall$data_day2 %>%
+  group_by(modal_categ) %>%
+  summarize(mean= mean(cat_agreement))
+
+checktask<-lm(cat_agreement~modal_categ, data = dataall$data_day2 )
+a<-Anova(checktask)
+
+checkrec<-lm(cat_agreement~modal_categ, data = dataall$data_rec)
+b<-Anova(checkrec)
+
+checkday1<-lm(cat_agreement~modal_categ, data = dataall$data_day1)
+c<-Anova(checkday1) 
+
+# loop until there is no significant difference
+while(any(c(a[1,4], b[1, 4])<0.05 )){
+  dataall<-process()
+  checktask<-lm(cat_agreement~modal_categ, data = dataall$data_day2 )
+  a<-Anova(checktask)
+  
+  checkrec<-lm(cat_agreement~modal_categ, data = dataall$data_rec)
+  b<-Anova(checkrec)
+
+}
+
+# check if there are repeated images
+for (l in 1:length(dataall)){
+  images<-dataall[[l]]$Filename
+  # exclude words that have 0 in them
+  imagesNum<-images[grep('0', images)]
+  # delete from the images
+  images<-images[!images %in% imagesNum]
+  
+  # delete the double
+  # first mark the one that are doubled
+  imagesdoubled<-vector()
+  counter<-1
+  for (i in 1:length(images)){
+    times<-length(images[images==images[i]])
+    if ((times)>1){
+      for (t in 1:(times-1)){
+        imagesdoubled[counter]<-ImagSelect$Filename[ImagSelect$Modal.name==modalname[i]][t]
+        counter<-counter+1
+      }
+    }
+  }
+  
+  sort(imagesNum)
+}
+
+imagesdoubled
+
+# # select images
+
+
+##########################################################
+############# assign objects to each list
+#########################################################
+
+
+# let's start from day2
+objectsDay2<-dataall$data_day2
+
+lists<-c("tasklistAplus","tasklistB","tasklistC","tasklistD")
+
+
+set.seed(58874146)
+
+for (t in 1: 4){  # we need four different versions, because we are randomising them across participants
+  
+  # start with all the objects before looping for each separate version
+  objects<-objectsDay2
+  
+  # loop for each list
+  for (l in 1:length(lists)){
+    
+    # take the list previously created
+    currlist<-assign(lists[l],as.data.frame(eval(parse(text = lists[l]))))
+    
+    # create a variable indicating the category
+    for (n in 1:nrow(currlist)){
+      # category for the image presented on the present trials
+      currlist$obj_category[n]<-as.character(currlist[n,(currlist$corr_ans[n]+3)])
+      # subset the data keeping only the ones with the same object cateogory
+      currobjects<-objects[objects$modal_categ==currlist$obj_category[n],]
+      # sample one of them
+      objectsel<-sample(currobjects$Filename[currobjects$modal_categ==currlist$obj_category[n]], 1)
+      # assign to the data
+      currlist$image[n]<-paste("stimuli/objects/",objectsel, ".jpg", sep="")
+      # delete that object from the objectPract
+      objects<-objects[objects$Filename!=objectsel,]
+    }
+    
+    # convert the characters into images
+    
+    currlist$first_character<-paste("stimuli/", currlist$first_character, ".jpg", sep="")
+    currlist$second_character<-paste("stimuli/", currlist$second_character, ".jpg", sep="")
+    
+    # convert the categories into images
+    categories<-c("left_categ", "centleft_categ", "centright_categ", "right_categ")
+    for (c in 1:length(categories)){
+      currlist[[categories[c]]]<-as.character(currlist[[categories[c]]])
+    }
+    
+    for (n in 1:nrow(currlist)){
+      for (c in 1:length(categories)){
+        currlist[n, categories[c]]<-paste("stimuli/", as.character(currlist[n, categories[c]]), ".png", sep="")
+      }
+    }
+    
+    # convert the cued carachter into jpg
+    currlist$cuedCharacter<-paste("stimuli/", currlist$cuedCharacter, ".jpg", sep="")
+    
+    # assign the current list to the data
+    assign(paste(lists[l], t, sep=""), currlist)
+    
+    # print the list
+    write.table(as.data.frame(eval(parse(text = paste(lists[l], t, sep="")))), paste("lists/", lists[l], t, ".csv", sep=""),
+                col.names = T,row.names = F, quote=F, sep=",")
+    
+  }
+}
+
+# do it for listA, in day1
+lists<-"tasklistA"
+
+objects<-dataall$data_day1
+
+for (l in 1:length(lists)){
+  
+  currlist<-assign(lists[l],as.data.frame(eval(parse(text = lists[l]))))
+  
+  # create a variable indicating the category
+  for (n in 1:nrow(currlist)){
+    currlist$obj_category[n]<-as.character(currlist[n,(currlist$corr_ans[n]+3)])
+    # substring 
+    #currlist$obj_category[n]<-substr(currlist$obj_category[n],9, nchar(currlist$obj_category[n])-4)
+    # subset the data
+    currobjects<-objects[objects$modal_categ==currlist$obj_category[n],]
+    # sample one of them
+    objectsel<-sample(currobjects$Filename[currobjects$modal_categ==currlist$obj_category[n]], 1)
+    # assign to the data
+    currlist$image[n]<-paste("stimuli/objects/",objectsel, ".jpg", sep="")
+    # we are not deleting them
+    #objects<-objects[objects$Filename!=objectsel,]
+  }
+  
+  
+  # convert the characters into images
+  
+  currlist$first_character<-paste("stimuli/", currlist$first_character, ".jpg", sep="")
+  currlist$second_character<-paste("stimuli/", currlist$second_character, ".jpg", sep="")
+  
+  # convert the categories into images
+  categories<-c("left_categ", "centleft_categ", "centright_categ", "right_categ")
+  for (c in 1:length(categories)){
+    currlist[[categories[c]]]<-as.character(currlist[[categories[c]]])
+  }
+  
+  for (n in 1:nrow(currlist)){
+    for (c in 1:length(categories)){
+      currlist[n, categories[c]]<-paste("stimuli/", as.character(currlist[n, categories[c]]), ".png", sep="")
+    }
+  }
+  
+  # convert the cued carachter into jpg
+  currlist$cuedCharacter<-paste("stimuli/", currlist$cuedCharacter, ".jpg", sep="")
+  
+  # assign the current list to the data
+  assign(paste(lists[l],  sep=""), currlist)
+  
+  # print the list
+  write.table(as.data.frame(eval(parse(text = paste(lists[l], sep="")))), paste("lists/", lists[l], ".csv", sep=""),
+              col.names = T,row.names = F, quote=F, sep=",")
+  
+}
+
+# write the objects in a text file
+#ImagesDay1<-unique(c(tasklistA1$image, tasklistA2$image, tasklistA3$image, tasklistA4$image))
+ImagesDay1<-tasklistA$image
+for (n in 1:length(ImagesDay1)){
+  ImagesDay1[n]<-substr(ImagesDay1[n], 17, nchar(ImagesDay1[n]))
+}
+
+write.table(ImagesDay1, "lists/ImagesDay1.txt", row.names=F, col.names = F, quote=F)
+
+
+# now for day two
+ImagesDay2<-vector()
+
+tasklists<-c("tasklistAplus1", "tasklistAplus2" ,"tasklistAplus3", "tasklistAplus4" ,  "tasklistB1", 
+             "tasklistB2", "tasklistB3","tasklistB4","tasklistC1","tasklistC2", "tasklistC3","tasklistC4", 
+             "tasklistD1","tasklistD2" ,"tasklistD3","tasklistD4")   
+
+# now we need to get all the images on day 2.
+# we want only those when trial condition is equal to 1, meaning that those are the ones that are congruent (85% of the times)
+# depending on the number (1 to 4), we have different objects that occurred as trialcond=1. 
+# therefore, we need 4 recog lists
+
+lists<-c("tasklistAplus","tasklistB","tasklistC","tasklistD")
+
+
+for (t in 1:4) {
+  pics<-vector()
+  for (list in lists) {
+    currlist<-get(paste(list, t, sep=""))
+    pics<-c(pics, currlist$image[currlist$trial_cond==1])
+  }
+  assign(paste("ImagesDay2", "_", t, sep=""), pics)
+}
+
+# substring the lists in order to leave only the names of the images
+listsday2<-c("ImagesDay2_1","ImagesDay2_2", "ImagesDay2_3", "ImagesDay2_4" )
+for (list in listsday2){
+  curlist<-get(list)
+  for (n in 1:length(curlist)){
+    curlist[n]<-substr(curlist[n], 17, nchar(curlist[n]))
+  }
+  assign(list, curlist)
+}
+
+# I think the previous elaboration is not necessary, as in the end we end up having 168 objects
+ImagesDay2<-unique(c(ImagesDay2_1, ImagesDay2_2, ImagesDay2_3, ImagesDay2_4))
+
+write.table(ImagesDay2, "lists/ImagesDay2.txt", row.names=F, col.names = F, quote=F)
+
+##########################################################################################
+############################# create warmup lists ########################################
+##########################################################################################
+
+#for (l in 1:length(Alists)){
+# retrieve tasklist
+currlist<-assign("tasklistA",as.data.frame(eval(parse(text = "tasklistA"))))
+# sample 20 trials from that one
+sampledlist<-currlist[sample(nrow(currlist), 19),]
+# check if the contingencies are kept
+sampledlist<-shuffle_corr_ans_dataframe_warmup(sampledlist)
+# create an object
+assign(paste("warmuplist", sep=""), sampledlist)
+
+# write it
+write.table(get(paste("warmuplist", sep="")), paste("lists/warmuplist",  ".csv", sep=""), 
+            col.names = T,row.names = F, quote=F, sep=",")
+
+#}
+
+# write down the images
+warmupImage<-vector()
+for (n in 1:nrow(warmuplist)){
+  warmupImage[n]<-substr(warmuplist$image[n], 17, nchar(warmuplist$image[n]))
+}
+
+# print them
+write.table(warmupImage, "lists/warmupImages.txt",  col.names = F,row.names = F, quote=F, sep=",")
+
+######################### now recognition ##############
+##### images for recognition dataset
+# check if the new images are equally distributed among categories
+dataall$data_rec %>%
+  group_by(modal_categ) %>%
+  tally()
+
+# we have one less object for the hand labour tool & accessory, vut that is okay
+# we did not have aenough objects
+
+# we have four different lists, therefore we need four recognition lists
+for (list in 1:4){
+  # old images
+  imagesforRecog<-get(paste("ImagesDay2_", list, sep=""))
+  # new images
+  imagesforRecog<-c(imagesforRecog, paste(dataall$data_rec$Filename, ".jpg", sep=""))
+  # variable indicating left and right
+  corr_ans<-c(rep("left", times=144), rep("right", times=144))
+  # varable indicating old and new
+  type<-c(rep("old", times=144), rep("new", times=144))
+  # add to a dataframe
+  imagesforRecog<-data.frame(cbind(imagesforRecog, corr_ans, type))
+  names(imagesforRecog)<-c("images", "corr_ans", "type")
+  # shuffle
+  set.seed(8521458)
+  imagesforRecog$order<-sample(seq(1:length(imagesforRecog$images)))
+  imagesforRecog<-imagesforRecog[order(imagesforRecog$order),]
+  
+  imagesforRecog$images<-paste("stimuli/objects/", imagesforRecog$images,sep="" )
+  
+  # divide into two blocks
+  imagesforRecog1<-imagesforRecog[1:143,]
+  imagesforRecog2<-imagesforRecog[144:286,]
+  
+  # print
+  write.table(imagesforRecog1, paste("lists/ImagesforRecog", list, "_1",   ".csv", sep=""),col.names = T,row.names = F, quote=F, sep=",")
+  write.table(imagesforRecog2, paste("lists/ImagesforRecog", list, "_2",   ".csv", sep=""),col.names = T,row.names = F, quote=F, sep=",")
+  
+}
+
+# 144 are the images that appear on coangruent trials on each list. 142 are the new images
+# 168 are all the images across all the lists. 168+142
+
+# now we need to print all the images for recognition
+recogIm<-c(ImagesDay2, paste(dataall$data_rec$Filename, ".jpg", sep=""))
+
+# 
+# recogIm<-unique(c(imagesforRecog1$images, imagesforRecog2$images))
+# 
+# for (n in 1:length(recogIm)){
+#   recogIm[n]<-substr(recogIm[n], 17, nchar(recogIm[n]))
+# }
+
+write.table(recogIm, "lists/ImagesforRecog.txt",col.names = F,row.names = F, quote=F, sep="," )
+
+# imagesforRecog<-c(paste(dataall$data_rec$Filename, ".jpg", sep=""))
+# corr_ans<-c(rep("left", times=160), rep("right", times=160))
+# type<-c(rep("old", times=160), rep("new", times=160))
+# 
+# 
+# # add to a dataframe
+# imagesforRecog<-data.frame(cbind(imagesforRecog, corr_ans, type))
+# names(imagesforRecog)<-c("images", "corr_ans", "type")
+# 
+# # shuffle
+# set.seed(8521458)
+# imagesforRecog$order<-sample(seq(1:length(imagesforRecog$images)))
+# imagesforRecog<-imagesforRecog[order(imagesforRecog$order),]
+# 
+# imagesforRecog$images<-paste("stimuli/objects/", imagesforRecog$images,sep="" )
+# 
+# # divide into two blocks
+# imagesforRecog1<-imagesforRecog[1:160,]
+# imagesforRecog2<-imagesforRecog[161:320,]
+# 
+# write.table(imagesforRecog1, "ImagesforRecog1.csv",col.names = T,row.names = F, quote=F, sep=",")
+# write.table(imagesforRecog2, "ImagesforRecog2.csv",col.names = T,row.names = F, quote=F, sep=",")
+
+setwd(cd)
+

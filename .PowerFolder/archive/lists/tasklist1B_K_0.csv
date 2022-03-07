@@ -1,0 +1,21 @@
+left_categ,centleft_categ,centright_categ,right_categ,corr_resp,type,corrans,image
+stimuli/Outdoor activity & sport item.png,stimuli/Kitchen & utensil.png,stimuli/Electronic device & accessory.png,stimuli/Hand labour tool & accessory.png,2,1,Kitchen & utensil,stimuli/objects/spatula04.jpg
+stimuli/Hand labour tool & accessory.png,stimuli/Kitchen & utensil.png,stimuli/Outdoor activity & sport item.png,stimuli/Electronic device & accessory.png,2,1,Kitchen & utensil,stimuli/objects/bottlecap.jpg
+stimuli/Kitchen & utensil.png,stimuli/Electronic device & accessory.png,stimuli/Outdoor activity & sport item.png,stimuli/Hand labour tool & accessory.png,1,1,Kitchen & utensil,stimuli/objects/toothpick02.jpg
+stimuli/Kitchen & utensil.png,stimuli/Outdoor activity & sport item.png,stimuli/Hand labour tool & accessory.png,stimuli/Electronic device & accessory.png,1,1,Kitchen & utensil,stimuli/objects/jug.jpg
+stimuli/Electronic device & accessory.png,stimuli/Outdoor activity & sport item.png,stimuli/Kitchen & utensil.png,stimuli/Hand labour tool & accessory.png,3,1,Kitchen & utensil,stimuli/objects/thermos.jpg
+stimuli/Electronic device & accessory.png,stimuli/Hand labour tool & accessory.png,stimuli/Kitchen & utensil.png,stimuli/Outdoor activity & sport item.png,2,0,Hand labour tool & accessory,stimuli/objects/drill01b.jpg
+stimuli/Outdoor activity & sport item.png,stimuli/Electronic device & accessory.png,stimuli/Kitchen & utensil.png,stimuli/Hand labour tool & accessory.png,3,1,Kitchen & utensil,stimuli/objects/chocolatefonduedish.jpg
+stimuli/Hand labour tool & accessory.png,stimuli/Electronic device & accessory.png,stimuli/Outdoor activity & sport item.png,stimuli/Kitchen & utensil.png,4,1,Kitchen & utensil,stimuli/objects/grater01a.jpg
+stimuli/Electronic device & accessory.png,stimuli/Outdoor activity & sport item.png,stimuli/Hand labour tool & accessory.png,stimuli/Kitchen & utensil.png,4,1,Kitchen & utensil,stimuli/objects/spoon01.jpg
+stimuli/Kitchen & utensil.png,stimuli/Hand labour tool & accessory.png,stimuli/Outdoor activity & sport item.png,stimuli/Electronic device & accessory.png,3,0,Outdoor activity & sport item,stimuli/objects/boatmotor.jpg
+stimuli/Hand labour tool & accessory.png,stimuli/Outdoor activity & sport item.png,stimuli/Kitchen & utensil.png,stimuli/Electronic device & accessory.png,3,1,Kitchen & utensil,stimuli/objects/kettle01.jpg
+stimuli/Hand labour tool & accessory.png,stimuli/Kitchen & utensil.png,stimuli/Electronic device & accessory.png,stimuli/Outdoor activity & sport item.png,2,1,Kitchen & utensil,stimuli/objects/cutleryset.jpg
+stimuli/Outdoor activity & sport item.png,stimuli/Hand labour tool & accessory.png,stimuli/Electronic device & accessory.png,stimuli/Kitchen & utensil.png,4,1,Kitchen & utensil,stimuli/objects/grill.jpg
+stimuli/Outdoor activity & sport item.png,stimuli/Electronic device & accessory.png,stimuli/Hand labour tool & accessory.png,stimuli/Kitchen & utensil.png,4,1,Kitchen & utensil,stimuli/objects/drinkshaker.jpg
+stimuli/Hand labour tool & accessory.png,stimuli/Electronic device & accessory.png,stimuli/Kitchen & utensil.png,stimuli/Outdoor activity & sport item.png,3,1,Kitchen & utensil,stimuli/objects/toasteroven.jpg
+stimuli/Electronic device & accessory.png,stimuli/Hand labour tool & accessory.png,stimuli/Outdoor activity & sport item.png,stimuli/Kitchen & utensil.png,3,0,Outdoor activity & sport item,stimuli/objects/tent.jpg
+stimuli/Electronic device & accessory.png,stimuli/Kitchen & utensil.png,stimuli/Hand labour tool & accessory.png,stimuli/Outdoor activity & sport item.png,2,1,Kitchen & utensil,stimuli/objects/pastaspoon.jpg
+stimuli/Kitchen & utensil.png,stimuli/Hand labour tool & accessory.png,stimuli/Electronic device & accessory.png,stimuli/Outdoor activity & sport item.png,3,0,Electronic device & accessory,stimuli/objects/computermouse06.jpg
+stimuli/Outdoor activity & sport item.png,stimuli/Kitchen & utensil.png,stimuli/Hand labour tool & accessory.png,stimuli/Electronic device & accessory.png,2,1,Kitchen & utensil,stimuli/objects/teapot.jpg
+stimuli/Electronic device & accessory.png,stimuli/Kitchen & utensil.png,stimuli/Outdoor activity & sport item.png,stimuli/Hand labour tool & accessory.png,1,0,Electronic device & accessory,stimuli/objects/ethernetcable02.jpg
